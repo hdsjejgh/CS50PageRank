@@ -58,16 +58,16 @@ def transition_model(corpus, page, damping_factor):
     a link at random chosen from all pages in the corpus.
     """
 
-    probs = {page:0 for page in corpus}
+    probs = {page:0 for page in corpus} #probability is initally 0
     if len(corpus[page]) == 0:
-        probs = {page:1/len(corpus.keys()) for page in corpus}
+        probs = {page:1/len(corpus.keys()) for page in corpus} #if the page has no links, then a new page is selected randomly, meaning all chances are equal
         return probs
-    rP = (1-damping_factor)/len(corpus[page])
-    dP = damping_factor/len(corpus)
-    for page in probs:
-        probs[page]+=rP
-        if page in corpus[page]:
-            probs[page] += dP
+    rP = (1-damping_factor)/len(corpus[page]) #probability from randomly being chosen
+    dP = damping_factor/len(corpus) #probability from getting clicked on in a link in hte current webpage
+    for p in probs:
+        probs[p]+=rP #adds the chance of being randomly chosen
+        if p in corpus[page]: #if the page is linked in the current page...
+            probs[p] += dP #add the chance of being clicked on in the page
     return probs
 
 
@@ -80,22 +80,21 @@ def sample_pagerank(corpus, damping_factor, n):
     their estimated PageRank value (a value between 0 and 1). All
     PageRank values should sum to 1.
     """
-    ranks = {c:0 for c in corpus.keys()}
+    ranks = {c:0 for c in corpus.keys()} #holds count of how many times each page is visited (dividing by n gives the chance)
 
-    page = random.choice(tuple(corpus.keys()))
-    ranks[page]+=1
-    for i in range(n-1):
-        num = random.random()
-        chances = transition_model(corpus, page, damping_factor)
+    page = random.choice(tuple(corpus.keys())) #randomly chooses an initial page
+    ranks[page]+=1 #increases the count of the initial page
+    for i in range(n-1): #gets n-1 samples (subtracts one because the first page is the first sample)
+        num = random.random() #random number
+        chances = transition_model(corpus, page, damping_factor) #gets the chances
         c=0
-        for ii in chances:
+        for ii in chances: #chooses a random webpage based on the given chances
             c+=chances[ii]
             if num<=c:
                 page=ii
                 ranks[page]+=1
-                continue
-    #print({c[0]:c[1]/n for c in ranks.items()})
-    return {c[0]: c[1] / n for c in ranks.items()}
+                break
+    return {c[0]: c[1] / n for c in ranks.items()} #returns the rankings
 
 def iterate_pagerank(corpus, damping_factor):
     """
@@ -107,9 +106,10 @@ def iterate_pagerank(corpus, damping_factor):
         PageRank values should sum to 1.
     """
     ranks = {page:1/len(corpus) for page in corpus}
-    change = 92841942
-    while change>0.001:
-        for page in ranks:
+    QUIT_THRESHOLD = 0.001 #if the amount of changes is really low ,then stop the thing
+    changes = {p:1 for p in corpus} #keeps track of the changes in each page each iteration
+    while max(changes.values())>QUIT_THRESHOLD:
+        for page in ranks: #constantly iterates through pages
             prevval = ranks[page]
             linkingPages = set()
             for p in corpus:
@@ -118,8 +118,8 @@ def iterate_pagerank(corpus, damping_factor):
             sumlinks = 0
             for p in linkingPages:
                 sumlinks+=ranks[p]/len(corpus[p])
-            ranks[page] = ((1-damping_factor)/len(corpus))+damping_factor*sumlinks
-            change = abs(prevval-ranks[page])
+            ranks[page] = ((1-damping_factor)/len(corpus))+damping_factor*sumlinks #sets the new rank based on some math stuff
+            changes[page] = abs(prevval-ranks[page])
 
 
     return ranks
